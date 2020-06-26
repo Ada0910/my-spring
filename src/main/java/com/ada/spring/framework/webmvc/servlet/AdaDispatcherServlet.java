@@ -6,11 +6,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.net.URL;
+import java.util.*;
 
 /**
  * @author Ada
@@ -24,6 +24,8 @@ public class AdaDispatcherServlet extends HttpServlet {
     private Map<String, Object> ioc = new HashMap<String, Object>();
 
     private Properties contextConfig = new Properties();
+
+    private List<String> classNames = new ArrayList<>();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -67,9 +69,43 @@ public class AdaDispatcherServlet extends HttpServlet {
     }
 
     private void doInstance() {
+        //判断实例是否为空
+        if (classNames.isEmpty()) {
+            return;
+        }
+        try {
+            for (String className : classNames) {
+                Class clazz = Class.forName(className);
+                Object instance = clazz.newInstance();
+
+
+                ioc.put("", instance);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void doScanner(String scanPackage) {
+        URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.", "/"));
+        File classPath = new File(url.getFile());
+        for (File file : classPath.listFiles()) {
+
+            //判断是否是文件夹，如果不是的话，递归
+            if (file.isDirectory()) {
+                doScanner(scanPackage + "." + file.getName());
+            } else {
+                if (!file.getName().endsWith(".class")) {
+                    continue;
+                }
+                //拿到全类名
+                String className = (scanPackage + "." + file.getName().replace(".class", ""));
+                classNames.add(className);
+
+            }
+
+        }
     }
 
     private void doLoadConfig(String contextConfigLocation) {
