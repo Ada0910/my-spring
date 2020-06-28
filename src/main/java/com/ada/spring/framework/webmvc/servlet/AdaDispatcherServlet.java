@@ -44,10 +44,30 @@ public class AdaDispatcherServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //7.调用
-        doDispatch();
+        try {
+            doDispatch(req, resp);
+        } catch (Exception e) {
+            resp.getWriter().write("500");
+        }
+
     }
 
-    private void doDispatch() {
+    /**
+     * 调用
+     */
+    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        String url = req.getRequestURI();
+        String contextPath = req.getContextPath();
+        //相对路径
+        url = url.replaceAll(contextPath, "").replaceAll("/*", "/");
+        if (!this.handlerMapping.containsKey(url)) {
+            resp.getWriter().write("404 Not Found!!!");
+            return;
+        }
+        Method method = this.handlerMapping.get(url);
+        Map<String, String[]> params = req.getParameterMap();
+        String beanName = toLowerFirstCase(method.getDeclaringClass().getSimpleName());
+        method.invoke(ioc.get(beanName), new Object[]{req, resp, params.get("name")[0], params.get("id")[0]});
     }
 
     @Override
@@ -79,19 +99,21 @@ public class AdaDispatcherServlet extends HttpServlet {
             return;
         }
         for (Map.Entry<String, Object> entry : ioc.entrySet()) {
-
             Class<?> clazz = entry.getValue().getClass();
-
+            String baseUrl = "";
+            if (clazz.isAnnotationPresent(AdaRequestMapping.class)) {
+                AdaRequestMapping requestMapping = clazz.getAnnotation(AdaRequestMapping.class);
+                baseUrl = requestMapping.value();
+            }
             for (Method method : clazz.getMethods()) {
                 if (!method.isAnnotationPresent(AdaRequestMapping.class)) {
                     continue;
                 }
                 AdaRequestMapping requestMapping = method.getAnnotation(AdaRequestMapping.class);
-                String url = requestMapping.value();
+                String url = "/" + baseUrl + "/" + requestMapping.value().replaceAll("/+", "/");
                 handlerMapping.put(url, method);
-
+                System.out.println("Mapper:" + url + "," + method);
             }
-
         }
     }
 
