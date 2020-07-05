@@ -1,10 +1,7 @@
 package com.ada.spring.framework.webmvc.servlet;
 
 
-import com.ada.spring.framework.annotation.AdaAutowired;
-import com.ada.spring.framework.annotation.AdaController;
-import com.ada.spring.framework.annotation.AdaRequestMapping;
-import com.ada.spring.framework.annotation.AdaService;
+import com.ada.spring.framework.annotation.*;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -14,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -66,8 +64,38 @@ public class AdaDispatcherServlet extends HttpServlet {
         }
         Method method = this.handlerMapping.get(url);
         Map<String, String[]> params = req.getParameterMap();
+
+
+        //形参列表
+        Class<?>[] paramterTypes = method.getParameterTypes();
+        //实参列表
+        Object[] paramtValues = new Object[paramterTypes.length];
+
+        for (int i = 0; i < paramterTypes.length; i++) {
+            Class paramterType = paramterTypes[i];
+            if (paramterType == HttpServletRequest.class) {
+                paramtValues[i] = req;
+            } else if (paramterType == HttpServletResponse.class) {
+                paramtValues[i] = resp;
+            } else if (paramterType == String.class) {
+                Annotation[][] pa = method.getParameterAnnotations();
+                for (Annotation a : pa[i]) {
+                    if (a instanceof AdaRequestParam) {
+                        String paramName = ((AdaRequestParam) a).value();
+                        if (!"".equals(paramName)) {
+                            String value = Arrays.toString(params.get(paramName)).replaceAll("\\[|\\]}", "").replaceAll("\\s", "");
+                            paramtValues[i] = value;
+                        }
+
+                    }
+                }
+            }
+
+        }
+
         String beanName = toLowerFirstCase(method.getDeclaringClass().getSimpleName());
-        method.invoke(ioc.get(beanName), new Object[]{req, resp, params.get("name")[0], params.get("id")[0]});
+        method.invoke(ioc.get(beanName), paramtValues);
+
     }
 
     @Override
@@ -111,7 +139,7 @@ public class AdaDispatcherServlet extends HttpServlet {
                     continue;
                 }
                 AdaRequestMapping requestMapping = method.getAnnotation(AdaRequestMapping.class);
-                String url =( "/" + baseUrl + "/" + requestMapping.value()).replaceAll("/+", "/");
+                String url = ("/" + baseUrl + "/" + requestMapping.value()).replaceAll("/+", "/");
                 handlerMapping.put(url, method);
                 System.out.println("Mapper:" + url + "," + method);
             }
