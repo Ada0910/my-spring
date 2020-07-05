@@ -38,7 +38,7 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        super.doGet(req, resp);
+        this.doPost(req, resp);
     }
 
     @Override
@@ -53,13 +53,13 @@ public class AdaDispatcherServlet extends HttpServlet {
     }
 
     /**
-     * 调用
+     * 7.调用
      */
     private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         String url = req.getRequestURI();
         String contextPath = req.getContextPath();
         //相对路径
-        url = url.replaceAll(contextPath, "").replaceAll("/*", "/");
+        //url = url.replaceAll(contextPath, "").replaceAll("/+", "/");
         if (!this.handlerMapping.containsKey(url)) {
             resp.getWriter().write("404 Not Found!!!");
             return;
@@ -76,7 +76,8 @@ public class AdaDispatcherServlet extends HttpServlet {
         doLoadConfig(config.getInitParameter("contextConfigLocation"));
 
         //3.扫描相关的类
-        doScanner(contextConfig.getProperty("scanPackage"));
+        //        doScanner(contextConfig.getProperty("scanPackage"));
+        doScanner("com.ada.demo");
 
         //4.实例化扫描到的类并且缓存到IOC容器中
         doInstance();
@@ -88,11 +89,11 @@ public class AdaDispatcherServlet extends HttpServlet {
         doHandlerMapping();
 
         //////////////////初始化阶段完成/////////////////
-        System.out.println("My Spring framework is init .........");
+        System.out.println(">>>>>>>>>>>>>>>My Spring framework is init .........>>>>>>>>>>>>>>>");
     }
 
     /**
-     * 初始化handlerMapping
+     * 6.初始化handlerMapping
      */
     private void doHandlerMapping() {
         if (ioc.isEmpty()) {
@@ -110,7 +111,7 @@ public class AdaDispatcherServlet extends HttpServlet {
                     continue;
                 }
                 AdaRequestMapping requestMapping = method.getAnnotation(AdaRequestMapping.class);
-                String url = "/" + baseUrl + "/" + requestMapping.value().replaceAll("/+", "/");
+                String url =( "/" + baseUrl + "/" + requestMapping.value()).replaceAll("/+", "/");
                 handlerMapping.put(url, method);
                 System.out.println("Mapper:" + url + "," + method);
             }
@@ -118,7 +119,7 @@ public class AdaDispatcherServlet extends HttpServlet {
     }
 
     /**
-     * 注入
+     * 5.注入
      */
     private void doAutowired() {
         if (ioc.isEmpty()) {
@@ -157,7 +158,7 @@ public class AdaDispatcherServlet extends HttpServlet {
     }
 
     /**
-     * 实例化
+     * 4.实例化
      */
     private void doInstance() {
         //判断实例是否为空
@@ -208,7 +209,7 @@ public class AdaDispatcherServlet extends HttpServlet {
     }
 
     /**
-     * 扫描加载类
+     * 3.扫描加载类
      */
     private void doScanner(String scanPackage) {
         URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.", "/"));
@@ -231,13 +232,15 @@ public class AdaDispatcherServlet extends HttpServlet {
     }
 
     /**
-     * 加载配置
+     * 1.加载配置
      */
     private void doLoadConfig(String contextConfigLocation) {
         //从classpath路径读取配置文件到内存中
         InputStream is = this.getClass().getClassLoader().getResourceAsStream(contextConfigLocation);
         try {
-            contextConfig.load(is);
+            if (is != null) {
+                contextConfig.load(is);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

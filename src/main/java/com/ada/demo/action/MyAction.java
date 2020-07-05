@@ -20,17 +20,17 @@ import java.io.IOException;
 @AdaController
 @AdaRequestMapping("/web")
 public class MyAction {
-
-
     @AdaAutowired
     QueryService queryService;
+
     @AdaAutowired
     ModifyService modifyService;
 
-    @AdaRequestMapping("/query.json")
+    @AdaRequestMapping("/query")
     public void query(HttpServletRequest request, HttpServletResponse response,
-                      @AdaRequestParam("name") String name) {
+                      @AdaRequestParam("name") String name,@AdaRequestParam("id") String id) {
         String result = queryService.query(name);
+        System.out.println(id);
         out(response, result);
     }
 
