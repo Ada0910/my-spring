@@ -100,6 +100,8 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
+
+       //===============1.IoC======================================
         //1.加载配置
         doLoadConfig(config.getInitParameter("contextConfigLocation"));
 
@@ -109,10 +111,10 @@ public class AdaDispatcherServlet extends HttpServlet {
 
         //4.实例化扫描到的类并且缓存到IOC容器中
         doInstance();
-
+        //===============2.DI======================================
         //5.完成依赖注入
         doAutowired();
-
+        //===============3.MVC======================================
         //6.初始化handlerMapping
         doHandlerMapping();
 
