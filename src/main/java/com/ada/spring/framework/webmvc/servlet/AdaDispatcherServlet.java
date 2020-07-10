@@ -2,6 +2,7 @@ package com.ada.spring.framework.webmvc.servlet;
 
 
 import com.ada.spring.framework.annotation.*;
+import com.ada.spring.framework.context.AdaApplicationContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -24,6 +25,8 @@ import java.util.*;
  * @Description:
  */
 public class AdaDispatcherServlet extends HttpServlet {
+
+    private AdaApplicationContext applicationContext;
 
     //2.初始化IoC容器
     private Map<String, Object> ioc = new HashMap<String, Object>();
@@ -101,19 +104,21 @@ public class AdaDispatcherServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
 
-       //===============1.IoC======================================
+        //===============1.IoC======================================
         //1.加载配置
-        doLoadConfig(config.getInitParameter("contextConfigLocation"));
+        // doLoadConfig(config.getInitParameter("contextConfigLocation"));
 
         //3.扫描相关的类
         //        doScanner(contextConfig.getProperty("scanPackage"));
-        doScanner("com.ada.demo");
+        //doScanner("com.ada.demo");
 
         //4.实例化扫描到的类并且缓存到IOC容器中
-        doInstance();
+        //  doInstance();
         //===============2.DI======================================
         //5.完成依赖注入
-        doAutowired();
+        // doAutowired();
+        applicationContext = new AdaApplicationContext(config.getInitParameter("contextConfigLocation"));
+
         //===============3.MVC======================================
         //6.初始化handlerMapping
         doHandlerMapping();

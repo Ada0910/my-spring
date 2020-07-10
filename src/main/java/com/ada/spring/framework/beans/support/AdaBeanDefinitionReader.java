@@ -1,5 +1,9 @@
 package com.ada.spring.framework.beans.support;
 
+import com.ada.spring.framework.beans.config.AdaBeanDefinition;
+
+import java.util.List;
+
 /**
  * @author Ada
  * @ClassName :AdaBeanDefinitionReader
@@ -7,4 +11,10 @@ package com.ada.spring.framework.beans.support;
  * @Description:
  */
 public class AdaBeanDefinitionReader {
+    public AdaBeanDefinitionReader(String[] configLocations) {
+    }
+
+    public List<AdaBeanDefinition> loadBeanDefinitions() {
+        return null;
+    }
 }
