@@ -9,13 +9,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.*;
 
 /**
@@ -28,12 +25,11 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     private AdaApplicationContext applicationContext;
 
+    private List<String> classNames = new ArrayList<>();
+
     //2.初始化IoC容器
     private Map<String, Object> ioc = new HashMap<String, Object>();
 
-    private Properties contextConfig = new Properties();
-
-    private List<String> classNames = new ArrayList<>();
 
     private Map<String, Method> handlerMapping = new HashMap<>();
 
@@ -103,20 +99,6 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-
-        //===============1.IoC======================================
-        //1.加载配置
-        // doLoadConfig(config.getInitParameter("contextConfigLocation"));
-
-        //3.扫描相关的类
-        //        doScanner(contextConfig.getProperty("scanPackage"));
-        //doScanner("com.ada.demo");
-
-        //4.实例化扫描到的类并且缓存到IOC容器中
-        //  doInstance();
-        //===============2.DI======================================
-        //5.完成依赖注入
-        // doAutowired();
         applicationContext = new AdaApplicationContext(config.getInitParameter("contextConfigLocation"));
 
         //===============3.MVC======================================
@@ -243,50 +225,4 @@ public class AdaDispatcherServlet extends HttpServlet {
         return String.valueOf(chars);
     }
 
-    /**
-     * 3.扫描加载类
-     */
-    private void doScanner(String scanPackage) {
-        URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.", "/"));
-        File classPath = new File(url.getFile());
-        for (File file : classPath.listFiles()) {
-
-            //判断是否是文件夹，如果不是的话，递归
-            if (file.isDirectory()) {
-                doScanner(scanPackage + "." + file.getName());
-            } else {
-                if (!file.getName().endsWith(".class")) {
-                    continue;
-                }
-                //拿到全类名
-                String className = (scanPackage + "." + file.getName().replace(".class", ""));
-                classNames.add(className);
-            }
-
-        }
-    }
-
-    /**
-     * 1.加载配置
-     */
-    private void doLoadConfig(String contextConfigLocation) {
-        //从classpath路径读取配置文件到内存中
-        InputStream is = this.getClass().getClassLoader().getResourceAsStream(contextConfigLocation);
-        try {
-            if (is != null) {
-                contextConfig.load(is);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-        }
-    }
 }
