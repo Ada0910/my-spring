@@ -1,9 +1,13 @@
 package com.ada.spring.framework.context;
 
+import com.ada.spring.framework.annotation.AdaAutowired;
+import com.ada.spring.framework.annotation.AdaController;
+import com.ada.spring.framework.annotation.AdaService;
 import com.ada.spring.framework.beans.AdaBeanWrapper;
 import com.ada.spring.framework.beans.config.AdaBeanDefinition;
 import com.ada.spring.framework.beans.support.AdaBeanDefinitionReader;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +26,8 @@ public class AdaApplicationContext {
     private final Map<String, AdaBeanDefinition> beanDefinitionMap = new HashMap<>();
 
     private Map<String, AdaBeanWrapper> factoryBeanInstanceCache = new HashMap<>();
+
+    private Map<String, Object> factoryBeanObjectCache = new HashMap<>();
 
     public AdaApplicationContext(String... configLocations) {
         this.configLocations = configLocations;
@@ -88,9 +94,63 @@ public class AdaApplicationContext {
     }
 
     private void populateBean(String beanName, AdaBeanDefinition beanDefinition, AdaBeanWrapper beanWrapper) {
+        Object instance = beanWrapper.getWrapperInstance();
+        Class<?> clazz = beanWrapper.getWrapperClass();
+
+        //只有加了注解的类才要依赖注入
+        if (clazz.isAnnotationPresent(AdaController.class) || clazz.isAnnotationPresent(AdaService.class)) {
+            return;
+        }
+
+        for (Field field : clazz.getDeclaredFields()) {
+            //只有加了个注解的才给你赋值
+            if (!field.isAnnotationPresent(AdaAutowired.class)) {
+                continue;
+            }
+            AdaAutowired autowired = field.getAnnotation(AdaAutowired.class);
+            String autowiredBeanName = autowired.value().trim();
+            if (autowiredBeanName.equals("")) {
+                autowiredBeanName = field.getType().getName();
+            }
+            //强制暴力访问
+            field.setAccessible(true);
+            try {
+                //ield相当于@AdaAutowired QueryService queryService;
+                //entry.getValue()相当于 MyAction的实例
+                //ioc.get(beanName)相当于ioc.get("com.ada.demo.service");
+                //总体这句话的意思就是拿到了对应的实例赋值给QueryService
+                // field.set(entry.getValue(), ioc.get(beanName));
+                if (factoryBeanInstanceCache.get(autowiredBeanName) == null) {
+                    continue;
+                }
+                field.set(instance, this.factoryBeanInstanceCache.get(autowiredBeanName).getWrapperInstance());
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+                continue;
+            }
+        }
     }
 
     private Object instaniateBean(String beanName, AdaBeanDefinition beanDefinition) {
-        return null;
+        String className = beanDefinition.getBeanClassName();
+        Object instance = null;
+        try {
+            Class<?> clazz = Class.forName(className);
+            instance = clazz.newInstance();
+            factoryBeanObjectCache.put(beanName, instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return instance;
+    }
+
+
+    public int getBeanDefinitionCount() {
+        return this.beanDefinitionMap.size();
+    }
+
+
+    public String[] getBeanDefinitionName() {
+        return this.beanDefinitionMap.keySet().toArray(new String[this.beanDefinitionMap.size()]);
     }
 }
