@@ -27,10 +27,6 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     private List<String> classNames = new ArrayList<>();
 
-    //2.初始化IoC容器
-    /*   private Map<String, Object> ioc = new HashMap<String, Object>();*/
-
-
     private Map<String, Method> handlerMapping = new HashMap<>();
 
     @Override
@@ -56,7 +52,7 @@ public class AdaDispatcherServlet extends HttpServlet {
         String url = req.getRequestURI();
         String contextPath = req.getContextPath();
         //相对路径
-        //url = url.replaceAll(contextPath, "").replaceAll("/+", "/");
+        url = url.replaceAll(contextPath, "").replaceAll("/+", "/");
         if (!this.handlerMapping.containsKey(url)) {
             resp.getWriter().write("404 Not Found!!!");
             return;

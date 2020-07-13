@@ -26,7 +26,8 @@ public class AdaBeanDefinitionReader {
         doLoadConfig(configLocations[0]);
 
         //2.扫描相关的类
-        doScanner(contextConfig.getProperty("scanPackage"));
+      //  doScanner(contextConfig.getProperty("scanPackage"));
+        doScanner("com.ada.demo");
     }
 
     public List<AdaBeanDefinition> loadBeanDefinitions() {
