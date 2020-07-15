@@ -2,7 +2,6 @@ package com.ada.spring.framework.webmvc.servlet;
 
 
 import com.ada.spring.framework.annotation.AdaRequestMapping;
-import com.ada.spring.framework.annotation.AdaRequestParam;
 import com.ada.spring.framework.context.AdaApplicationContext;
 
 import javax.servlet.ServletConfig;
@@ -10,10 +9,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * @author Ada
@@ -28,6 +31,12 @@ public class AdaDispatcherServlet extends HttpServlet {
     private List<String> classNames = new ArrayList<>();
 
     private Map<String, Method> handlerMapping = new HashMap<>();
+
+    private List<AdaHandlerMapping> handlerMappings = new ArrayList<>();
+
+    private Map<AdaHandlerMapping, AdaHandlerAdapter> handlerAdapters = new HashMap<>();
+
+    private List<AdaViewResolver> viewResolvers = new ArrayList<>();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -45,10 +54,36 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     }
 
-    /**
-     * 7.调用
-     */
-    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) {
+        //1.根据url去拿到一个handlerMapping
+        AdaHandlerMapping handler = getHandler(req);
+        if (handler == null) {
+            processDispatchResult(req, resp, new AdaModelAndView("404"));
+            return;
+        }
+        //2.根据HandlerMapping 获得一个handlerAdapter
+
+        AdaHandlerAdapter ha = getHandlerAdapter(handler);
+
+        //3.根据handlerAdapter拿到一个ModelAndView
+        AdaModelAndView mv = ha.handle(req, resp, handler);
+
+        //4.根据modelAndView决定选择那个viewRoslver渲染
+        processDispatchResult(req,resp,mv);
+    }
+
+    private AdaHandlerAdapter getHandlerAdapter(AdaHandlerMapping handler) {
+        return null;
+    }
+
+    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, AdaModelAndView modelAndView) {
+    }
+
+    private AdaHandlerMapping getHandler(HttpServletRequest req) {
+        return null;
+    }
+
+/*    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         String url = req.getRequestURI();
         String contextPath = req.getContextPath();
         //相对路径
@@ -90,25 +125,44 @@ public class AdaDispatcherServlet extends HttpServlet {
 
         method.invoke(applicationContext.getBean(method.getDeclaringClass()), paramtValues);
 
-    }
+    }*/
 
     @Override
     public void init(ServletConfig config) throws ServletException {
+
+        //IoC,DI
         applicationContext = new AdaApplicationContext(config.getInitParameter("contextConfigLocation"));
 
         //===============3.MVC======================================
         //6.初始化handlerMapping
-        doHandlerMapping();
+        initStrategies(applicationContext);
 
         //////////////////初始化阶段完成/////////////////
         System.out.println(">>>>>>>>>>>>>>>My Spring framework is init .........>>>>>>>>>>>>>>>");
     }
 
-    /**
-     * 6.初始化handlerMapping
-     */
-    private void doHandlerMapping() {
+    private void initStrategies(AdaApplicationContext context) {
+        initHandlerMappings(context);
+        initHandlerAdapters(context);
+        initViewResolvers(context);
+    }
 
+    private void initViewResolvers(AdaApplicationContext context) {
+        String templateRoot = context.getConfig().getProperty("templateRoot");
+        String templateRootPath = this.getClass().getClassLoader().getResource(templateRoot).getPath();
+        File templateRootDir = new File(templateRootPath);
+        for (File file : templateRootDir.listFiles()) {
+            this.viewResolvers.add(new AdaViewResolver(templateRoot));
+        }
+    }
+
+    private void initHandlerAdapters(AdaApplicationContext context) {
+        for (AdaHandlerMapping mapping : handlerMappings) {
+            this.handlerAdapters.put(mapping, new AdaHandlerAdapter());
+        }
+    }
+
+    private void initHandlerMappings(AdaApplicationContext context) {
         if (applicationContext.getBeanDefinitionCount() == 0) {
             return;
         }
@@ -128,11 +182,16 @@ public class AdaDispatcherServlet extends HttpServlet {
                     continue;
                 }
                 AdaRequestMapping requestMapping = method.getAnnotation(AdaRequestMapping.class);
-                String url = ("/" + baseUrl + "/" + requestMapping.value()).replaceAll("/+", "/");
-                handlerMapping.put(url, method);
-                System.out.println("Mapper:" + url + "," + method);
+                String regex = ("/" + baseUrl + "/" + requestMapping.value())
+                        .replaceAll("\\*", ".*")
+                        .replaceAll("/+", "/");
+                //handlerMapping.put(url, method);
+                Pattern pattern = Pattern.compile(regex);
+                handlerMappings.add(new AdaHandlerMapping(pattern, instance, method));
+                System.out.println("Mapper:" + regex + "," + method);
             }
         }
     }
+
 
 }
