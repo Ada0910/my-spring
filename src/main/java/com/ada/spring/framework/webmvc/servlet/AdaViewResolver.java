@@ -9,4 +9,8 @@ package com.ada.spring.framework.webmvc.servlet;
 public class AdaViewResolver {
     public AdaViewResolver(String templateRoot) {
     }
+
+    public AdaView resolverViewName(String viewName) {
+        return null;
+    }
 }

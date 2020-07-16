@@ -12,10 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -49,12 +47,16 @@ public class AdaDispatcherServlet extends HttpServlet {
         try {
             doDispatch(req, resp);
         } catch (Exception e) {
-            resp.getWriter().write("500");
+            Map<String, Object> model = new HashMap<>();
+            model.put("detail", "500");
+            model.put("stackTrace", Arrays.toString(e.getStackTrace()));
+
+            processDispatchResult(req, resp, new AdaModelAndView("500", model));
         }
 
     }
 
-    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) {
+    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         //1.根据url去拿到一个handlerMapping
         AdaHandlerMapping handler = getHandler(req);
         if (handler == null) {
@@ -69,17 +71,45 @@ public class AdaDispatcherServlet extends HttpServlet {
         AdaModelAndView mv = ha.handle(req, resp, handler);
 
         //4.根据modelAndView决定选择那个viewRoslver渲染
-        processDispatchResult(req,resp,mv);
+        processDispatchResult(req, resp, mv);
     }
 
     private AdaHandlerAdapter getHandlerAdapter(AdaHandlerMapping handler) {
-        return null;
+        if (this.handlerAdapters.isEmpty()) {
+            return null;
+        }
+        return this.handlerAdapters.get(handler);
     }
 
-    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, AdaModelAndView modelAndView) {
+    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, AdaModelAndView mv) {
+        if (null == mv) {
+            return;
+        }
+
+        if (this.viewResolvers.isEmpty()) {
+            return;
+        }
+
+        for (AdaViewResolver viewResolver : this.viewResolvers) {
+            AdaView view = viewResolver.resolverViewName(mv.getViewName());
+            view.render(mv.getModel(), req, resp);
+        }
+
     }
 
     private AdaHandlerMapping getHandler(HttpServletRequest req) {
+        String url = req.getRequestURI();
+        String contextPath = req.getContextPath();
+        //相对路径
+        url = url.replaceAll(contextPath, "").replaceAll("/+", "/");
+
+        for (AdaHandlerMapping mapping : this.handlerMappings) {
+            Matcher matcher = mapping.getPattern().matcher(url);
+            if (!matcher.matches()) {
+                continue;
+            }
+            return mapping;
+        }
         return null;
     }
 
