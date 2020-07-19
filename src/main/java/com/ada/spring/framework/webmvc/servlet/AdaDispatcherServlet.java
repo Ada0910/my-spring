@@ -28,8 +28,6 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     private List<String> classNames = new ArrayList<>();
 
-    private Map<String, Method> handlerMapping = new HashMap<>();
-
     private List<AdaHandlerMapping> handlerMappings = new ArrayList<>();
 
     private Map<AdaHandlerMapping, AdaHandlerAdapter> handlerAdapters = new HashMap<>();
@@ -42,7 +40,7 @@ public class AdaDispatcherServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         //7.调用
         try {
             doDispatch(req, resp);
@@ -51,7 +49,11 @@ public class AdaDispatcherServlet extends HttpServlet {
             model.put("detail", "500");
             model.put("stackTrace", Arrays.toString(e.getStackTrace()));
 
-            processDispatchResult(req, resp, new AdaModelAndView("500", model));
+            try {
+                processDispatchResult(req, resp, new AdaModelAndView("500", model));
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
         }
 
     }
@@ -81,7 +83,7 @@ public class AdaDispatcherServlet extends HttpServlet {
         return this.handlerAdapters.get(handler);
     }
 
-    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, AdaModelAndView mv) {
+    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, AdaModelAndView mv) throws Exception {
         if (null == mv) {
             return;
         }
@@ -113,49 +115,6 @@ public class AdaDispatcherServlet extends HttpServlet {
         return null;
     }
 
-/*    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-        String url = req.getRequestURI();
-        String contextPath = req.getContextPath();
-        //相对路径
-        url = url.replaceAll(contextPath, "").replaceAll("/+", "/");
-        if (!this.handlerMapping.containsKey(url)) {
-            resp.getWriter().write("404 Not Found!!!");
-            return;
-        }
-        Method method = this.handlerMapping.get(url);
-        Map<String, String[]> params = req.getParameterMap();
-
-
-        //形参列表
-        Class<?>[] paramterTypes = method.getParameterTypes();
-        //实参列表
-        Object[] paramtValues = new Object[paramterTypes.length];
-
-        for (int i = 0; i < paramterTypes.length; i++) {
-            Class paramterType = paramterTypes[i];
-            if (paramterType == HttpServletRequest.class) {
-                paramtValues[i] = req;
-            } else if (paramterType == HttpServletResponse.class) {
-                paramtValues[i] = resp;
-            } else if (paramterType == String.class) {
-                Annotation[][] pa = method.getParameterAnnotations();
-                for (Annotation a : pa[i]) {
-                    if (a instanceof AdaRequestParam) {
-                        String paramName = ((AdaRequestParam) a).value();
-                        if (!"".equals(paramName)) {
-                            String value = Arrays.toString(params.get(paramName)).replaceAll("\\[|\\]}", "").replaceAll("\\s", "");
-                            paramtValues[i] = value;
-                        }
-
-                    }
-                }
-            }
-
-        }
-
-        method.invoke(applicationContext.getBean(method.getDeclaringClass()), paramtValues);
-
-    }*/
 
     @Override
     public void init(ServletConfig config) throws ServletException {
