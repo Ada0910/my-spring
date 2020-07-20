@@ -26,8 +26,6 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     private AdaApplicationContext applicationContext;
 
-    private List<String> classNames = new ArrayList<>();
-
     private List<AdaHandlerMapping> handlerMappings = new ArrayList<>();
 
     private Map<AdaHandlerMapping, AdaHandlerAdapter> handlerAdapters = new HashMap<>();
@@ -87,16 +85,13 @@ public class AdaDispatcherServlet extends HttpServlet {
         if (null == mv) {
             return;
         }
-
         if (this.viewResolvers.isEmpty()) {
             return;
         }
-
         for (AdaViewResolver viewResolver : this.viewResolvers) {
             AdaView view = viewResolver.resolverViewName(mv.getViewName());
             view.render(mv.getModel(), req, resp);
         }
-
     }
 
     private AdaHandlerMapping getHandler(HttpServletRequest req) {
@@ -118,12 +113,11 @@ public class AdaDispatcherServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-
         //IoC,DI
         applicationContext = new AdaApplicationContext(config.getInitParameter("contextConfigLocation"));
 
         //===============3.MVC======================================
-        //6.初始化handlerMapping
+        //初始化handlerMapping
         initStrategies(applicationContext);
 
         //////////////////初始化阶段完成/////////////////
@@ -137,7 +131,8 @@ public class AdaDispatcherServlet extends HttpServlet {
     }
 
     private void initViewResolvers(AdaApplicationContext context) {
-        String templateRoot = context.getConfig().getProperty("templateRoot");
+        String templateRoot = "layouts";
+        //String templateRoot = context.getConfig().getProperty("templateRoot");
         String templateRootPath = this.getClass().getClassLoader().getResource(templateRoot).getPath();
         File templateRootDir = new File(templateRootPath);
         for (File file : templateRootDir.listFiles()) {
