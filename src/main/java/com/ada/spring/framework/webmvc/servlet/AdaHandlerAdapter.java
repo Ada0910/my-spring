@@ -53,7 +53,7 @@ public class AdaHandlerAdapter {
         Object[] paramtValues = new Object[paramterTypes.length];
 
         for (Map.Entry<String, String[]> param : params.entrySet()) {
-            String value = Arrays.toString(params.get(param.getKey())).replaceAll("\\[|\\]}", "").replaceAll("\\s", "");
+            String value = Arrays.toString(params.get(param.getKey())).replaceAll("\\[|\\]", "").replaceAll("\\s", "");
             if (!paramIndexMapping.containsKey(param.getKey())) {
                 continue;
             }
