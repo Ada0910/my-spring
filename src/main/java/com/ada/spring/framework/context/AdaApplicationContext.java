@@ -138,6 +138,12 @@ public class AdaApplicationContext {
         try {
             Class<?> clazz = Class.forName(className);
             instance = clazz.newInstance();
+
+            //此处应该有AOP的介入
+
+
+
+
             factoryBeanObjectCache.put(beanName, instance);
         } catch (Exception e) {
             e.printStackTrace();
