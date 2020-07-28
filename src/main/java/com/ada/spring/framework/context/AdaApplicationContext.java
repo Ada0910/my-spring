@@ -3,6 +3,9 @@ package com.ada.spring.framework.context;
 import com.ada.spring.framework.annotation.AdaAutowired;
 import com.ada.spring.framework.annotation.AdaController;
 import com.ada.spring.framework.annotation.AdaService;
+import com.ada.spring.framework.aop.AdaJdkDynamicAopProxy;
+import com.ada.spring.framework.aop.config.AdaAopConfig;
+import com.ada.spring.framework.aop.support.AdaAdvisedSupport;
 import com.ada.spring.framework.beans.AdaBeanWrapper;
 import com.ada.spring.framework.beans.config.AdaBeanDefinition;
 import com.ada.spring.framework.beans.support.AdaBeanDefinitionReader;
@@ -140,15 +143,30 @@ public class AdaApplicationContext {
             instance = clazz.newInstance();
 
             //此处应该有AOP的介入
-
-
-
+            AdaAdvisedSupport config = instantionAopConfig(beanDefinition);
+            config.setTargetClass(clazz);
+            config.setTarget(instance);
+            //判断要不要创建代理类
+            if (config.pointCutMatch()) {
+                instance = new AdaJdkDynamicAopProxy(config).getProxy();
+            }
 
             factoryBeanObjectCache.put(beanName, instance);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return instance;
+    }
+
+    private AdaAdvisedSupport instantionAopConfig(AdaBeanDefinition beanDefinition) {
+        AdaAopConfig config = new AdaAopConfig();
+        config.setPointCut(this.reader.getConfig().getProperty("pointCut"));
+        config.setAspectClass(this.reader.getConfig().getProperty("aspectClass"));
+        config.setAspectBefore(this.reader.getConfig().getProperty("aspectBefore"));
+        config.setAspectAfter(this.reader.getConfig().getProperty("aspectAfter"));
+        config.setAspectAfterThrow(this.reader.getConfig().getProperty("aspectAfterThrow"));
+        config.setAspectAfterThrowingName(this.reader.getConfig().getProperty("aspectAfterThrowingName"));
+        return new AdaAdvisedSupport(config);
     }
 
 
@@ -162,6 +180,6 @@ public class AdaApplicationContext {
     }
 
     public Properties getConfig() {
-        return  reader.getConfig();
+        return reader.getConfig();
     }
 }

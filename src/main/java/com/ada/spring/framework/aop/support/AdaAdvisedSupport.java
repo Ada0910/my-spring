@@ -1,5 +1,7 @@
 package com.ada.spring.framework.aop.support;
 
+import com.ada.spring.framework.aop.config.AdaAopConfig;
+
 /**
  * @author Ada
  * @ClassName :AdaAdvisedSupport
@@ -7,4 +9,17 @@ package com.ada.spring.framework.aop.support;
  * @Description:
  */
 public class AdaAdvisedSupport {
+    //解析读取出来的配置信息
+    public AdaAdvisedSupport(AdaAopConfig config) {
+    }
+
+    public boolean pointCutMatch() {
+        return false;
+    }
+
+    public void setTargetClass(Class<?> clazz) {
+    }
+
+    public void setTarget(Object instance) {
+    }
 }

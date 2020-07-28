@@ -1,5 +1,7 @@
 package com.ada.spring.framework.aop;
 
+import com.ada.spring.framework.aop.support.AdaAdvisedSupport;
+
 /**
  * @author Ada
  * @ClassName :AdaJdkDynamicAopProxy
@@ -7,4 +9,10 @@ package com.ada.spring.framework.aop;
  * @Description:
  */
 public class AdaJdkDynamicAopProxy {
+    public AdaJdkDynamicAopProxy(AdaAdvisedSupport config) {
+    }
+
+    public Object getProxy() {
+        return null;
+    }
 }
