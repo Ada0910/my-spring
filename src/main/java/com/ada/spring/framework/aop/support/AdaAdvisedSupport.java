@@ -6,6 +6,7 @@ import com.ada.spring.framework.aop.config.AdaAopConfig;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -55,6 +56,14 @@ public class AdaAdvisedSupport {
             Map<String, Method> aspectMethods = new HashMap<>();
             for (Method method : aspectClass.getMethods()) {
                 aspectMethods.put(method.getName(), method);
+
+            }
+            for (Method method : this.targetClass.getMethods()) {
+                String methodString = method.toString();
+                if (methodString.contains("throws")) {
+                    methodString = methodString.substring(0, methodString.lastIndexOf("throws")).trim();
+                }
+                Matcher matcher = pointCutPattern.matcher(methodString);
 
             }
         } catch (Exception e) {
