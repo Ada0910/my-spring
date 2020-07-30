@@ -28,7 +28,7 @@ public class AdaView {
                 String paramName = matcher.group();
                 paramName = paramName.replaceAll("￥\\{|\\}}", "");
                 Object paramValue = model.get(paramName);
-                line = matcher.replaceFirst(paramValue.toString());
+                line = matcher.replaceFirst(makeStringForRegExp(paramValue.toString()));
                 matcher = pattern.matcher(line);
             }
             sb.append(line);
@@ -36,5 +36,16 @@ public class AdaView {
         resp.setCharacterEncoding("utf-8");
         resp.getWriter().write(sb.toString());
 
+    }
+    //处理特殊字符
+    public static String makeStringForRegExp(String str) {
+        return str.replace("\\", "\\\\").replace("*", "\\*")
+                .replace("+", "\\+").replace("|", "\\|")
+                .replace("{", "\\{").replace("}", "\\}")
+                .replace("(", "\\(").replace(")", "\\)")
+                .replace("^", "\\^").replace("$", "\\$")
+                .replace("[", "\\[").replace("]", "\\]")
+                .replace("?", "\\?").replace(",", "\\,")
+                .replace(".", "\\.").replace("&", "\\&");
     }
 }

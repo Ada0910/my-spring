@@ -4,6 +4,7 @@ import com.ada.spring.framework.aop.aspect.AdaAdvice;
 import com.ada.spring.framework.aop.support.AdaAdvisedSupport;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Map;
@@ -28,17 +29,30 @@ public class AdaJdkDynamicAopProxy implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
+        //proxy 拿到代理的对象
+        //method 用户调用的方法
+        //args 实参
         Map<String, AdaAdvice> advices = this.config.getAdvice(method, this.config.getTargetClass());
-        advices.get("before");
+        Object returnValue;
+        invokeAdvice(advices.get("before"));
         try {
-            method.invoke(this.config.getTarget(), args);
+            returnValue = method.invoke(this.config.getTarget(), args);
         } catch (Exception e) {
-            advices.get("afterThrowing");
+            invokeAdvice(advices.get("afterThrowing"));
             e.printStackTrace();
             throw e;
         }
+        invokeAdvice(advices.get("after"));
+        return returnValue;
+    }
 
-        advices.get("after");
-        return null;
+    private void invokeAdvice(AdaAdvice advice) {
+        try {
+            advice.getAdviceMethod().invoke(advice.getApsect());
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
     }
 }

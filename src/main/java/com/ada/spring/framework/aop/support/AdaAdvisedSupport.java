@@ -64,6 +64,22 @@ public class AdaAdvisedSupport {
                     methodString = methodString.substring(0, methodString.lastIndexOf("throws")).trim();
                 }
                 Matcher matcher = pointCutPattern.matcher(methodString);
+                if (matcher.matches()) {
+                    Map<String, AdaAdvice> advices = new HashMap<>();
+                    //前置通知
+                    if (!(null == config.getAspectBefore() || "".equals(config.getAspectBefore()))) {
+                        advices.put("before", new AdaAdvice(aspectClass.newInstance(), aspectMethods.get(config.getAspectBefore())));
+                    }
+                    // 后置通知
+                    if (!(null == config.getAspectAfter() || "".equals(config.getAspectAfter()))) {
+                        advices.put("after", new AdaAdvice(aspectClass.newInstance(), aspectMethods.get(config.getAspectAfter())));
+                    }
+                    //异常通知
+                    if (!(null == config.getAspectAfterThrow() || "".equals(config.getAspectAfterThrow()))) {
+                        advices.put("afterThrow", new AdaAdvice(aspectClass.newInstance(), aspectMethods.get(config.getAspectAfterThrow())));
+                    }
+                    methodCache.put(method, advices);
+                }
 
             }
         } catch (Exception e) {
@@ -84,7 +100,13 @@ public class AdaAdvisedSupport {
         this.target = target;
     }
 
-    public Map<String, AdaAdvice> getAdvice(Method method, Class targetClass) {
-        return null;
+    public Map<String, AdaAdvice> getAdvice(Method method, Class targetClass) throws Exception {
+        Map<String, AdaAdvice> cache = methodCache.get(method);
+        if (null == cache) {
+            Method m = targetClass.getMethod(method.getName(), method.getParameterTypes());
+            cache = methodCache.get(m);
+            this.methodCache.put(m, cache);
+        }
+        return cache;
     }
 }
